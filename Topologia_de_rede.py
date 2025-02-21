@@ -31,8 +31,9 @@ sub_redes = [
 
 hosts_por_rede3_4 = 15 
 hosts_por_rede1_2 = 24  # Quantidade de hosts por switch de borda
-hosts = {f'hosts_e{i+1}': alocar_enderecos(sub_redes12[i], hosts_por_rede1_2) for i in range(len(sub_redes))} | {f'hosts_e{i+5}': alocar_enderecos(sub_redes[i], hosts_por_rede3_4) for i in range(len(sub_redes))}
-# Definição dos switches
+hosts_por_rede3_4 = 15 
+hosts_por_rede1_2 = 24  # Quantidade de hosts por switch de borda
+hosts = {f'hosts_e{i+1}': alocar_enderecos(sub_redes12[i], hosts_por_rede1_2) for i in range(len(sub_redes)//2)} | {f'hosts_e{i+3}': alocar_enderecos(sub_redes12[i], hosts_por_rede3_4) for i in range(len(sub_redes)//2)} | {f'hosts_e{i+5}': alocar_enderecos(sub_redes[i], hosts_por_rede3_4) for i in range(len(sub_redes)//2)} | {f'hosts_e{i+7}': alocar_enderecos(sub_redes[i], hosts_por_rede1_2) for i in range(len(sub_redes)//2)}# Definição dos switches
 # Definição dos switches
 switch_central = {"Switch_Central": "192.168.1.1"}
 
@@ -282,3 +283,4 @@ def menu_interativo(G):
 if __name__ == "_main_":
     G = plotar_rede()
     menu_interativo(G)
+    
