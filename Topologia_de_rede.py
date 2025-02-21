@@ -15,29 +15,42 @@ def alocar_enderecos(rede, num_hosts):
 
 # Definição das sub-redes para switches de borda
 sub_redes12 = [
-    ipaddress.IPv4Network('192.168.1.0/27'),
-    ipaddress.IPv4Network('192.168.1.32/27')
+    ipaddress.IPv4Network('192.168.2.0/27'),
+    ipaddress.IPv4Network('192.168.2.32/27'),
+    ipaddress.IPv4Network('192.168.2.64/27'),
+    ipaddress.IPv4Network('192.168.2.96/27')
+
 ]
 
 sub_redes = [
-    ipaddress.IPv4Network('192.168.1.64/27'),
-    ipaddress.IPv4Network('192.168.1.96/27')
+    ipaddress.IPv4Network('192.168.3.0/27'),
+    ipaddress.IPv4Network('192.168.3.32/27'),
+    ipaddress.IPv4Network('192.168.3.64/27'),
+    ipaddress.IPv4Network('192.168.3.96/27')
 ]
 
 hosts_por_rede3_4 = 15 
 hosts_por_rede1_2 = 24  # Quantidade de hosts por switch de borda
-hosts = {f'hosts_e{i+1}': alocar_enderecos(sub_redes12[i], hosts_por_rede1_2) for i in range(len(sub_redes))} | {f'hosts_e{i+3}': alocar_enderecos(sub_redes[i], hosts_por_rede3_4) for i in range(len(sub_redes))}
+hosts = {f'hosts_e{i+1}': alocar_enderecos(sub_redes12[i], hosts_por_rede1_2) for i in range(len(sub_redes))} | {f'hosts_e{i+5}': alocar_enderecos(sub_redes[i], hosts_por_rede3_4) for i in range(len(sub_redes))}
+# Definição dos switches
 # Definição dos switches
 switch_central = {"Switch_Central": "192.168.1.1"}
+
+# Atualizando IPs e criando 4 switches de borda para cada switch de agregação
 switches_agregacao = {
-    "Switch_A1": "192.168.1.10",
-    "Switch_A2": "192.168.1.20"
+    "Switch_A1": "192.168.2.0",
+    "Switch_A2": "192.168.3.0"
 }
+
 switches_borda = {
-    "Switch_B1": "192.168.1.30",
-    "Switch_B2": "192.168.1.40",
-    "Switch_B3": "192.168.1.50",
-    "Switch_B4": "192.168.1.60"
+    "Switch_B1": "192.168.2.10",
+    "Switch_B2": "192.168.2.20",
+    "Switch_B3": "192.168.2.30",
+    "Switch_B4": "192.168.2.40",
+    "Switch_B5": "192.168.3.10",
+    "Switch_B6": "192.168.3.20",
+    "Switch_B7": "192.168.3.30",
+    "Switch_B8": "192.168.3.40"
 }
 
 # Definição dos enlaces
@@ -46,8 +59,12 @@ enlaces = {
     ("Switch_Central", "Switch_A2"): {"tipo": "fibra óptica", "capacidade": "10 Gbps"},
     ("Switch_A1", "Switch_B1"): {"tipo": "fibra óptica", "capacidade": "1 Gbps"},
     ("Switch_A1", "Switch_B2"): {"tipo": "fibra óptica", "capacidade": "1 Gbps"},
-    ("Switch_A2", "Switch_B3"): {"tipo": "fibra óptica", "capacidade": "1 Gbps"},
-    ("Switch_A2", "Switch_B4"): {"tipo": "fibra óptica", "capacidade": "1 Gbps"}
+    ("Switch_A1", "Switch_B3"): {"tipo": "fibra óptica", "capacidade": "1 Gbps"},
+    ("Switch_A1", "Switch_B4"): {"tipo": "fibra óptica", "capacidade": "1 Gbps"},
+    ("Switch_A2", "Switch_B5"): {"tipo": "fibra óptica", "capacidade": "1 Gbps"},
+    ("Switch_A2", "Switch_B6"): {"tipo": "fibra óptica", "capacidade": "1 Gbps"},
+    ("Switch_A2", "Switch_B7"): {"tipo": "fibra óptica", "capacidade": "1 Gbps"},
+    ("Switch_A2", "Switch_B8"): {"tipo": "fibra óptica", "capacidade": "1 Gbps"}
 }
 
 # Tabelas de roteamento estáticas
@@ -59,12 +76,16 @@ tabelas_roteamento = {
         "192.168.1.96/27": "Switch_A2"
     },
     "Switch_A1": {
-        "192.168.1.0/27": "Switch_B1",
-        "192.168.1.32/27": "Switch_B2"
+        "192.168.2.0/27": "Switch_B1",
+        "192.168.2.32/27": "Switch_B2",
+        "192.168.2.64/27": "Switch_B3",
+        "192.168.2.96/27": "Switch_B4"
     },
     "Switch_A2": {
-        "192.168.1.64/27": "Switch_B3",
-        "192.168.1.96/27": "Switch_B4"
+        "192.168.3.0/27": "Switch_B5",
+        "192.168.3.32/27": "Switch_B6",
+        "192.168.3.64/27": "Switch_B7",
+        "192.168.3.96/27": "Switch_B8"
     }
 }
 
@@ -136,7 +157,7 @@ def ping_terminal(G, destino_ip):
     if tempos:
         print(f"Aproximar um número redondo de tempos em milissegundos:")
         print(f"    Mínimo = {min(tempos)}ms, Máximo = {max(tempos)}ms, Média = {sum(tempos)//len(tempos)}ms")
-        
+
 def traceroute(G, destino_ip, max_hops=30):
     try:
         destino_ip_obj = ipaddress.IPv4Address(destino_ip)
@@ -199,8 +220,12 @@ def plotar_rede():
         ("Switch_Central", "Switch_A2"),
         ("Switch_A1", "Switch_B1"),
         ("Switch_A1", "Switch_B2"),
-        ("Switch_A2", "Switch_B3"),
-        ("Switch_A2", "Switch_B4")
+        ("Switch_A1", "Switch_B3"),
+        ("Switch_A1", "Switch_B4"),
+        ("Switch_A2", "Switch_B5"),
+        ("Switch_A2", "Switch_B6"),
+        ("Switch_A2", "Switch_B7"),
+        ("Switch_A2", "Switch_B8")
     ]
     
     for key, host_list in hosts.items():
