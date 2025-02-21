@@ -9,46 +9,62 @@ def simular_ping():
     return random.randint(10, 200)  # Simulando latência entre 10ms e 200ms
 
 # Função para gerar os endereços IP de uma sub-rede
-def alocar_enderecos(subrede, num_hosts):
-    hosts = list(subrede.hosts())  # Gera os IPs disponíveis para hosts
-    return hosts[:num_hosts] if len(hosts) >= num_hosts else []
+def alocar_enderecos(rede, num_hosts):
+    return list(rede.hosts())[:num_hosts]
 
-# Definição das sub-redes
-e1 = ipaddress.IPv4Network('192.168.1.0/27')
-e2 = ipaddress.IPv4Network('192.168.1.32/27')
-e3 = ipaddress.IPv4Network('192.168.1.64/27')
-e4 = ipaddress.IPv4Network('192.168.1.96/27')
 
-hosts_e1 = alocar_enderecos(e1, 24)
-hosts_e2 = alocar_enderecos(e2, 24)
-hosts_e3 = alocar_enderecos(e3, 15)
-hosts_e4 = alocar_enderecos(e4, 15)
+# Definição das sub-redes para switches de borda
+sub_redes12 = [
+    ipaddress.IPv4Network('192.168.1.0/27'),
+    ipaddress.IPv4Network('192.168.1.32/27')
+]
 
-# Definição dos roteadores e switches
-roteadores = {"RoteadorA1": "192.168.1.97", "RoteadorA2": "192.168.1.101"}
-switches = {"Switch1": "192.168.1.2", "Switch2": "192.168.1.34", "Switch3": "192.168.1.66", "Switch4": "192.168.1.98"}
+sub_redes = [
+    ipaddress.IPv4Network('192.168.1.64/27'),
+    ipaddress.IPv4Network('192.168.1.96/27')
+]
 
-# Adicionando tipos de enlaces e justificativas
+hosts_por_rede3_4 = 15 
+hosts_por_rede1_2 = 24  # Quantidade de hosts por switch de borda
+hosts = {f'hosts_e{i+1}': alocar_enderecos(sub_redes12[i], hosts_por_rede1_2) for i in range(len(sub_redes))} | {f'hosts_e{i+3}': alocar_enderecos(sub_redes[i], hosts_por_rede3_4) for i in range(len(sub_redes))}
+# Definição dos switches
+switch_central = {"Switch_Central": "192.168.1.1"}
+switches_agregacao = {
+    "Switch_A1": "192.168.1.10",
+    "Switch_A2": "192.168.1.20"
+}
+switches_borda = {
+    "Switch_B1": "192.168.1.30",
+    "Switch_B2": "192.168.1.40",
+    "Switch_B3": "192.168.1.50",
+    "Switch_B4": "192.168.1.60"
+}
+
+# Definição dos enlaces
 enlaces = {
-    ("Switch1", "RoteadorA1"): {"tipo": "fibra óptica", "capacidade": "1 Gbps", "justificativa": "Alta velocidade e baixa latência para conexão central"},
-    ("Switch3", "RoteadorA1"): {"tipo": "fibra óptica", "capacidade": "1 Gbps", "justificativa": "Alta velocidade e baixa latência para conexão central"},
-    ("Switch2", "RoteadorA2"): {"tipo": "fibra óptica", "capacidade": "1 Gbps", "justificativa": "Alta velocidade e baixa latência para conexão central"},
-    ("Switch4", "RoteadorA2"): {"tipo": "fibra óptica", "capacidade": "1 Gbps", "justificativa": "Alta velocidade e baixa latência para conexão central"},
+    ("Switch_Central", "Switch_A1"): {"tipo": "fibra óptica", "capacidade": "10 Gbps"},
+    ("Switch_Central", "Switch_A2"): {"tipo": "fibra óptica", "capacidade": "10 Gbps"},
+    ("Switch_A1", "Switch_B1"): {"tipo": "fibra óptica", "capacidade": "1 Gbps"},
+    ("Switch_A1", "Switch_B2"): {"tipo": "fibra óptica", "capacidade": "1 Gbps"},
+    ("Switch_A2", "Switch_B3"): {"tipo": "fibra óptica", "capacidade": "1 Gbps"},
+    ("Switch_A2", "Switch_B4"): {"tipo": "fibra óptica", "capacidade": "1 Gbps"}
 }
 
 # Tabelas de roteamento estáticas
 tabelas_roteamento = {
-    "RoteadorA1": {
-        "192.168.1.0/27": "Switch1",
-        "192.168.1.32/27": "Switch2",
-        "192.168.1.64/27": "Switch3",
-        "192.168.1.96/27": "Switch4"
+    "Switch_Central": {
+        "192.168.1.0/27": "Switch_A1",
+        "192.168.1.32/27": "Switch_A1",
+        "192.168.1.64/27": "Switch_A2",
+        "192.168.1.96/27": "Switch_A2"
     },
-    "RoteadorA2": {
-        "192.168.1.0/27": "Switch1",
-        "192.168.1.32/27": "Switch2",
-        "192.168.1.64/27": "Switch3",
-        "192.168.1.96/27": "Switch4"
+    "Switch_A1": {
+        "192.168.1.0/27": "Switch_B1",
+        "192.168.1.32/27": "Switch_B2"
+    },
+    "Switch_A2": {
+        "192.168.1.64/27": "Switch_B3",
+        "192.168.1.96/27": "Switch_B4"
     }
 }
 
@@ -121,45 +137,81 @@ def ping_terminal(G, destino_ip):
         print(f"Aproximar um número redondo de tempos em milissegundos:")
         print(f"    Mínimo = {min(tempos)}ms, Máximo = {max(tempos)}ms, Média = {sum(tempos)//len(tempos)}ms")
         
-def traceroute(host, max_hops=30, timeout=2):
-    print(f"\nMostrando a rota para {host}...")
-    # Simulação do traceroute baseada no grafo omitida para foco no ping
+def traceroute(G, destino_ip, max_hops=30):
+    try:
+        destino_ip_obj = ipaddress.IPv4Address(destino_ip)
+    except ValueError:
+        print(f"Erro: O IP {destino_ip} não é um endereço IPv4 válido.")
+        return
 
-def diagnostico_completo():
-    print("\nIniciando diagnóstico de rede...")
-    # Diagnóstico completo omitido para foco no ping
+    origem = "Switch_Central"  # O tráfego sempre começa pelo switch central
+    destino = None
+
+    # Busca o destino no grafo
+    for node, data in G.nodes(data=True):
+        if data.get('ip') == destino_ip:
+            destino = node
+            break
+
+    if not destino:
+        print(f"Erro: O IP {destino_ip} não foi encontrado na rede.")
+        return
+
+    print(f"\nRastreando rota para {destino_ip} a partir de {origem}...\n")
+
+    try:
+        if not nx.has_path(G, source=origem, target=destino):
+            print("Erro: Não há caminho entre a origem e o destino. Verifique a conectividade.")
+            return
+
+        caminho = nx.shortest_path(G, source=origem, target=destino, weight='weight')
+        print("Caminho encontrado:", caminho)
+        total_saltos = min(len(caminho), max_hops)
+
+        for i in range(total_saltos):
+            nodo_atual = caminho[i]
+            latencia = sum(G[u][v]['weight'] for u, v in zip(caminho[:i], caminho[1:i+1])) if i > 0 else 0
+            ttl = max_hops - i  
+            
+            print(f"{i+1}\t{G.nodes[nodo_atual].get('ip', 'Desconhecido')}\t{latencia}ms\tTTL={ttl}")
+            time.sleep(0.5)
+    
+    except nx.NetworkXNoPath:
+        print("Erro: Não há caminho entre a origem e o destino. Verifique a conectividade.")
+
+    print("\nRastreamento concluído.")
 
 
 def plotar_rede():
     G = nx.Graph()
     
     # Adicionando nós
-    for nome, ip in {**roteadores, **switches}.items():
+    for nome, ip in {**switch_central, **switches_agregacao, **switches_borda}.items():
         G.add_node(nome, type='dispositivo', ip=ip)
-    for i, host in enumerate(hosts_e1 + hosts_e2 + hosts_e3 + hosts_e4):
-        G.add_node(f"Host{i+1}", type='host', ip=str(host))
+    
+    for i, (key, host_list) in enumerate(hosts.items()):
+        for j, host in enumerate(host_list):
+            G.add_node(f"Host_{key}_{j+1}", type='host', ip=str(host))
     
     # Conexões entre dispositivos
     conexoes = [
-        ("Switch1", "RoteadorA1"),
-        ("Switch3", "RoteadorA1"),
-        ("Switch2", "RoteadorA2"),
-        ("Switch4", "RoteadorA2")
+        ("Switch_Central", "Switch_A1"),
+        ("Switch_Central", "Switch_A2"),
+        ("Switch_A1", "Switch_B1"),
+        ("Switch_A1", "Switch_B2"),
+        ("Switch_A2", "Switch_B3"),
+        ("Switch_A2", "Switch_B4")
     ]
-    for i in range(24):
-        conexoes.append((f"Host{i+1}", "Switch1"))
-    for i in range(24):
-        conexoes.append((f"Host{i+25}", "Switch2"))
-    for i in range(15):
-        conexoes.append((f"Host{i+49}", "Switch3"))
-    for i in range(15):
-        conexoes.append((f"Host{i+64}", "Switch4"))
     
-    # Adicionando arestas com latência simulada e informações de enlace
+    for key, host_list in hosts.items():
+        switch_borda = key.replace('hosts_e', 'Switch_B')
+        for j in range(len(host_list)):
+            conexoes.append((f"Host_{key}_{j+1}", switch_borda))
+    
+    # Adicionando arestas com latência simulada
     for origem, destino in conexoes:
         latencia = simular_ping()
-        tipo_enlace = enlaces.get((origem, destino), {}).get("tipo", "desconhecido")
-        G.add_edge(origem, destino, weight=latencia, tipo_enlace=tipo_enlace)
+        G.add_edge(origem, destino, weight=latencia)
     
     # Verifica se o grafo está conectado
     if not nx.is_connected(G):
@@ -177,15 +229,15 @@ def plotar_rede():
     nx.draw_networkx_edge_labels(G, pos, edge_labels=labels)
     
     plt.title("Topologia da Rede com Latência do Ping")
-    plt.show(block=False)  # Não bloquear a execução do programa
-    plt.pause(0.1)  # Pausa para garantir que a janela seja renderizada
+    plt.show(block=False)
+    plt.pause(0.1)
 
     return G
 
 
 def menu_interativo(G):
     while True:
-        comando = input("\nDigite um comando (ping <IP>, tabelas, sair): ").strip().lower()
+        comando = input("\nDigite um comando (ping <IP>, tabelas, sair, traceroute): ").strip().lower()
         
         if comando.startswith("ping"):
             _, destino_ip = comando.split(maxsplit=1)
@@ -196,6 +248,9 @@ def menu_interativo(G):
             print("Encerrando o programa...")
             plt.close()  # Fecha a janela do gráfico
             break
+        elif comando.startswith("traceroute"):
+            _, destino_ip = comando.split(maxsplit=1)
+            traceroute(G, destino_ip)
         else:
             print("Comando inválido. Tente novamente.")
 
